@@ -8,16 +8,16 @@ const PlaceholderWarning: React.FC = () => {
   if (!isPlaceholder) return null
 
   return (
-    <Alert className="mx-6 mt-20 mb-4 border-yellow-500/50 bg-yellow-500/10">
-      <AlertTriangle className="h-4 w-4 text-yellow-500" />
-      <AlertDescription className="text-yellow-200">
+    <Alert className="mx-6 mt-20 mb-4 border-accent/50 bg-accent/10">
+      <AlertTriangle className="h-4 w-4 text-accent" />
+      <AlertDescription className="text-accent-foreground">
         <strong>Demo Mode:</strong> Using placeholder Project ID. 
         Google sign-in and social logins won't work. 
         <a 
           href="https://dashboard.reown.com" 
           target="_blank" 
           rel="noopener noreferrer"
-          className="inline-flex items-center ml-2 text-yellow-300 hover:text-yellow-100 underline"
+          className="inline-flex items-center ml-2 text-accent hover:text-accent/80 underline"
         >
           Get your Project ID
           <ExternalLink className="ml-1 h-3 w-3" />

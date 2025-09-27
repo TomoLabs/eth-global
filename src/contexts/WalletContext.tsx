@@ -29,10 +29,12 @@ try {
     },
     themeMode: 'dark',
     themeVariables: {
-      '--w3m-color-mix': '#315100',
-      '--w3m-color-mix-strength': 20,
+      '--w3m-color-mix': '#ffff00',
+      '--w3m-color-mix-strength': 25,
       '--w3m-font-family': 'Inter, sans-serif',
-      '--w3m-border-radius-master': '12px'
+      '--w3m-border-radius-master': '12px',
+      '--w3m-accent-color': '#ffff00',
+      '--w3m-background-color': '#1a1a0a'
     }
   })
 } catch (error) {
