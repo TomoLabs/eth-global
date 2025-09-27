@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ChevronUp, ChevronDown, Plus, Users, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { ethersENSService } from '@/services/ethersENSService'
+import { alchemyENSService } from '@/services/alchemyENSService'
 
 interface Friend {
   id: string
@@ -22,6 +22,20 @@ interface FriendsSectionProps {
   onGroupCreate: (selectedFriends: Friend[]) => void
 }
 
+// Cache for ENS resolutions to avoid repeated API calls
+const ensCache = new Map<string, { address: string | null; error?: string; timestamp: number }>()
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes cache
+
+// Function to clear expired cache entries
+const clearExpiredCache = () => {
+  const now = Date.now()
+  for (const [key, value] of ensCache.entries()) {
+    if (now - value.timestamp > CACHE_DURATION) {
+      ensCache.delete(key)
+    }
+  }
+}
+
 const FriendsSection: React.FC<FriendsSectionProps> = ({ 
   friends, 
   onFriendsUpdate, 
@@ -33,17 +47,58 @@ const FriendsSection: React.FC<FriendsSectionProps> = ({
   const [isResolvingENS, setIsResolvingENS] = useState(false)
   const [resolvedAddress, setResolvedAddress] = useState<string | null>(null)
 
+  // Clean up expired cache entries periodically
+  useEffect(() => {
+    const cleanup = setInterval(() => {
+      clearExpiredCache()
+    }, 60000) // Clean every minute
+
+    return () => clearInterval(cleanup)
+  }, [])
+
+  // Function to get cached ENS resolution or fetch new one
+  const getCachedENSResolution = async (ensName: string): Promise<{ address: string | null; error?: string }> => {
+    const normalizedName = ensName.toLowerCase().trim()
+    const now = Date.now()
+    
+    // Check cache first
+    const cached = ensCache.get(normalizedName)
+    if (cached && (now - cached.timestamp) < CACHE_DURATION) {
+      console.log(`🎯 Using cached ENS resolution for ${normalizedName}`)
+      return { address: cached.address, error: cached.error }
+    }
+    
+    // Cache miss or expired, fetch new resolution
+    console.log(`🔄 Fetching new ENS resolution for ${normalizedName}`)
+    try {
+      const result = await alchemyENSService.resolveENSToAddress(normalizedName)
+      
+      // Cache the result
+      ensCache.set(normalizedName, {
+        address: result.address,
+        error: result.error,
+        timestamp: now
+      })
+      
+      return result
+    } catch (error) {
+      const errorResult = { address: null, error: 'Resolution failed' }
+      ensCache.set(normalizedName, { ...errorResult, timestamp: now })
+      return errorResult
+    }
+  }
+
   const handleWalletIdChange = async (walletId: string) => {
     setNewFriend({ walletId })
     setEnsError(null)
     setResolvedAddress(null)
 
     // Only resolve ENS names to show wallet address preview
-    if (walletId.trim() && ethersENSService.isENSName(walletId)) {
+    if (walletId.trim() && alchemyENSService.isENSName(walletId)) {
       setIsResolvingENS(true)
       
       try {
-        const result = await ethersENSService.resolveENSToAddress(walletId)
+        const result = await getCachedENSResolution(walletId)
         
         if (result.error) {
           setEnsError(result.error)
@@ -66,30 +121,45 @@ const FriendsSection: React.FC<FriendsSectionProps> = ({
     const inputValue = newFriend.walletId.trim()
     
     // Check if it's an ENS name
-    if (ethersENSService.isENSName(inputValue)) {
-      // For ENS names: store ENS as walletId, with resolved address
-      if (!resolvedAddress) {
-        setEnsError('Please wait for ENS resolution to complete')
-        return
+    if (alchemyENSService.isENSName(inputValue)) {
+      // For ENS names: use cached resolution or resolve if not available
+      let finalResolvedAddress = resolvedAddress
+      
+      if (!finalResolvedAddress) {
+        setIsResolvingENS(true)
+        try {
+          const result = await getCachedENSResolution(inputValue)
+          if (result.error) {
+            setEnsError(result.error)
+            setIsResolvingENS(false)
+            return
+          }
+          finalResolvedAddress = result.address
+        } catch (error) {
+          setEnsError('Failed to resolve ENS name')
+          setIsResolvingENS(false)
+          return
+        }
+        setIsResolvingENS(false)
       }
       
       const friend: Friend = {
         id: Date.now().toString(),
         walletId: inputValue, // Store the ENS name
-        resolvedAddress: resolvedAddress, // Store the resolved wallet address
+        resolvedAddress: finalResolvedAddress, // Store the resolved wallet address
         isENS: true,
         isSelected: false
       }
       
       onFriendsUpdate([...friends, friend])
-      console.log(`✅ Added ENS friend: ${inputValue} → ${resolvedAddress}`)
+      console.log(`✅ Added ENS friend: ${inputValue} → ${finalResolvedAddress}`)
       
-    } else if (ethersENSService.isEthereumAddress(inputValue)) {
+    } else if (alchemyENSService.isEthereumAddress(inputValue)) {
       // For wallet addresses: store address as walletId, try to find ENS
       setIsResolvingENS(true)
       
       try {
-        const ensName = await ethersENSService.resolveAddressToENS(inputValue)
+        const ensName = await alchemyENSService.resolveAddressToENS(inputValue)
         
         const friend: Friend = {
           id: Date.now().toString(),
