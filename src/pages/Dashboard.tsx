@@ -5,8 +5,10 @@ import SplitModal from '@/components/SplitModal'
 
 interface Friend {
   id: string
-  name: string
   walletId: string
+  resolvedAddress?: string // For ENS names, store the resolved address
+  resolvedENS?: string // For addresses, store the resolved ENS name
+  isENS?: boolean
   isSelected: boolean
 }
 
@@ -24,50 +26,18 @@ const Dashboard: React.FC = () => {
   const [friends, setFriends] = useState<Friend[]>([
     {
       id: '1',
-      name: 'Alice Cooper',
       walletId: '0x742d35Cc6635C8532FD6bD8c',
       isSelected: false
     },
     {
       id: '2',
-      name: 'Bob Smith',
-      walletId: 'bobsmith.eth',
+      walletId: 'vitalik.eth',
+      isENS: true,
       isSelected: false
     },
     {
       id: '3',
-      name: 'Charlie Brown',
       walletId: '0x1234567890123456789012345',
-      isSelected: false
-    },
-    {
-      id: '4',
-      name: 'Diana Prince',
-      walletId: '0xabcdef1234567890abcdef12',
-      isSelected: false
-    },
-    {
-      id: '5',
-      name: 'Ethan Hunt',
-      walletId: 'ethan.eth',
-      isSelected: false
-    },
-    {
-      id: '6',
-      name: 'Fiona Gallagher',
-      walletId: '0x987654321098765432109876',
-      isSelected: false
-    },
-    {
-      id: '7',
-      name: 'George Washington',
-      walletId: 'george.eth',
-      isSelected: false
-    },
-    {
-      id: '8',
-      name: 'Hannah Montana',
-      walletId: '0xdeadbeefcafebabe12345678',
       isSelected: false
     }
   ])
@@ -109,7 +79,7 @@ const Dashboard: React.FC = () => {
       id: Date.now().toString(),
       name: groupName,
       hash: `0x${Math.random().toString(16).substr(2, 8)}...`,
-      members: selectedFriends.map(friend => friend.name),
+      members: selectedFriends.map(friend => friend.resolvedENS || friend.walletId),
       createdAt: new Date()
     }
     setGroups([...groups, newGroup])
