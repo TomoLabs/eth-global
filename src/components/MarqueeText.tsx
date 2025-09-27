@@ -11,13 +11,14 @@ const MarqueeText = ({ children, reverse = false, speed = 30, className = "" }: 
   return (
     <div className={`overflow-hidden whitespace-nowrap ${className}`}>
       <div 
-        className={`inline-block ${reverse ? 'animate-marquee-reverse' : 'animate-marquee'}`}
+        className={`inline-flex ${reverse ? 'animate-marquee-reverse' : 'animate-marquee'}`}
         style={{ 
           animationDuration: `${speed}s`,
-          minWidth: '100%'
+          minWidth: '200%'
         }}
       >
-        {children}
+        <span className="w-full flex-shrink-0">{children}</span>
+        <span className="w-full flex-shrink-0">{children}</span>
       </div>
     </div>
   );

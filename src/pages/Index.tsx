@@ -2,6 +2,8 @@ import MarqueeText from "@/components/MarqueeText";
 import ParticleBackground from "@/components/ParticleBackground";
 import HookCard from "@/components/HookCard";
 import GlowButton from "@/components/GlowButton";
+import Navbar from "@/components/Navbar";
+import PlaceholderWarning from "@/components/PlaceholderWarning";
 import heroBackground from "@/assets/hero-background.jpg";
 import paymentSplit from "@/assets/payment-split.jpg";
 import streamingFees from "@/assets/streaming-fees.jpg";
@@ -49,6 +51,8 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <Navbar />
+      <PlaceholderWarning />
       <ParticleBackground />
       
       {/* Hero Section */}
@@ -138,6 +142,47 @@ const Index = () => {
               Match with creators, set up referral codes, and start earning 
               from every swap in their ecosystem.
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* About Section */}
+      <section id="about-section" className="py-20 px-6">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6 gradient-text">
+              About Us
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              We're building the future of decentralized finance by making AMM pools 
+              socially composable through innovative Uniswap v4 hooks.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="glass rounded-2xl p-8 text-center">
+              <div className="text-4xl mb-4">🚀</div>
+              <h3 className="text-xl font-bold mb-4">Innovation</h3>
+              <p className="text-muted-foreground">
+                Pioneering the next generation of DeFi primitives with creator-centric solutions.
+              </p>
+            </div>
+
+            <div className="glass rounded-2xl p-8 text-center">
+              <div className="text-4xl mb-4">🌐</div>
+              <h3 className="text-xl font-bold mb-4">Community</h3>
+              <p className="text-muted-foreground">
+                Building bridges between creators, developers, and the broader DeFi ecosystem.
+              </p>
+            </div>
+
+            <div className="glass rounded-2xl p-8 text-center">
+              <div className="text-4xl mb-4">💡</div>
+              <h3 className="text-xl font-bold mb-4">Vision</h3>
+              <p className="text-muted-foreground">
+                Democratizing access to financial tools for creators and fostering economic growth.
+              </p>
+            </div>
           </div>
         </div>
       </section>
