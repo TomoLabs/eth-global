@@ -103,33 +103,68 @@ class AlchemyENSService {
     const normalizedName = ensName.toLowerCase().trim()
 
     try {
-      console.log(`🔍 Resolving ENS name with Alchemy SDK: ${normalizedName}`)
+      console.log(`🔍 Getting OWNER wallet address for ENS: ${normalizedName}`)
       
-      // Test with a known working ENS first (for comparison)
-      if (normalizedName === 'yash.eth') {
-        console.log('🧪 Testing with vitalik.eth first for comparison...')
-        try {
-          const testAddress = await this.alchemy.core.resolveName('vitalik.eth')
-          console.log('✅ vitalik.eth resolves to:', testAddress)
-        } catch (testError) {
-          console.log('❌ vitalik.eth test failed:', testError)
+      // Method 1: Try to get the owner directly using ethers (most reliable)
+      try {
+        const ethers = await import('ethers')
+        const provider = new ethers.JsonRpcProvider(`https://eth-mainnet.g.alchemy.com/v2/${this.apiKey}`)
+        
+        // Get the resolver for this ENS name
+        const resolver = await provider.getResolver(normalizedName)
+        
+        if (resolver) {
+          console.log(`✅ Found resolver for ${normalizedName}`)
+          
+          // Get the owner of the ENS name
+          const ownerAddress = await resolver.getAddress() // This gets the owner
+          
+          if (ownerAddress && this.isEthereumAddress(ownerAddress)) {
+            console.log(`✅ Found OWNER address for ${normalizedName}: ${ownerAddress}`)
+            return {
+              address: ownerAddress
+            }
+          }
         }
+        
+        // Alternative: Try direct owner lookup via ENS registry
+        console.log(`🔄 Trying alternative owner lookup for ${normalizedName}`)
+        
+        // ENS Registry contract address
+        const ensRegistryAddress = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e'
+        
+        // Create contract instance for ENS registry
+        const ensRegistryABI = [
+          'function owner(bytes32 node) view returns (address)'
+        ]
+        
+        const ensRegistry = new ethers.Contract(ensRegistryAddress, ensRegistryABI, provider)
+        
+        // Convert ENS name to namehash
+        const namehash = ethers.namehash(normalizedName)
+        
+        // Get the owner from registry
+        const ownerFromRegistry = await ensRegistry.owner(namehash)
+        
+        if (ownerFromRegistry && this.isEthereumAddress(ownerFromRegistry) && ownerFromRegistry !== '0x0000000000000000000000000000000000000000') {
+          console.log(`✅ Found OWNER via registry for ${normalizedName}: ${ownerFromRegistry}`)
+          return {
+            address: ownerFromRegistry
+          }
+        }
+        
+      } catch (ownerError) {
+        console.log(`❌ Owner lookup failed:`, ownerError)
       }
       
-      // Use Alchemy's resolveName method (following their documentation)
+      // If owner lookup fails, fall back to standard resolution
+      console.log(`🔄 Falling back to standard ENS resolution for ${normalizedName}`)
       const address = await this.alchemy.core.resolveName(normalizedName)
       
-      console.log(`📋 Raw response from Alchemy for ${normalizedName}:`, address)
-      console.log(`📋 Response type:`, typeof address)
-      console.log(`📋 Response value:`, address)
-      
-      if (!address) {
-        console.warn(`⚠️ ENS name exists but no Ethereum address set: ${normalizedName}`)
-        console.warn(`💡 The ENS name ${normalizedName} exists but may not have an Ethereum address record`)
-        console.warn(`🔧 Check if the ENS owner has set an ETH address in their records`)
+      if (address && this.isEthereumAddress(address)) {
+        console.log(`✅ Found standard resolution for ${normalizedName}: ${address}`)
         return {
-          address: null,
-          error: 'ENS name exists but no Ethereum address is set. Please check the ENS records.'
+          address: address
         }
       }
 
