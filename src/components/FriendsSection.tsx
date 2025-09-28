@@ -94,7 +94,8 @@ const FriendsSection: React.FC<FriendsSectionProps> = ({
     setResolvedAddress(null)
 
     // Only resolve ENS names to show wallet address preview
-    if (walletId.trim() && alchemyENSService.isENSName(walletId)) {
+    // Add minimum length check to avoid resolving incomplete names
+    if (walletId.trim() && alchemyENSService.isENSName(walletId) && walletId.length >= 7) {
       setIsResolvingENS(true)
       
       try {

@@ -39,7 +39,7 @@ const Navbar: React.FC = () => {
             className="text-2xl font-bold gradient-text cursor-pointer"
             onClick={() => navigate('/')}
           >
-            Creator Economy Hooks
+            TOMO-LABS
           </div>
 
           {/* Navigation Items */}

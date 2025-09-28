@@ -110,25 +110,8 @@ class AlchemyENSService {
         const ethers = await import('ethers')
         const provider = new ethers.JsonRpcProvider(`https://eth-mainnet.g.alchemy.com/v2/${this.apiKey}`)
         
-        // Get the resolver for this ENS name
-        const resolver = await provider.getResolver(normalizedName)
-        
-        if (resolver) {
-          console.log(`✅ Found resolver for ${normalizedName}`)
-          
-          // Get the owner of the ENS name
-          const ownerAddress = await resolver.getAddress() // This gets the owner
-          
-          if (ownerAddress && this.isEthereumAddress(ownerAddress)) {
-            console.log(`✅ Found OWNER address for ${normalizedName}: ${ownerAddress}`)
-            return {
-              address: ownerAddress
-            }
-          }
-        }
-        
-        // Alternative: Try direct owner lookup via ENS registry
-        console.log(`🔄 Trying alternative owner lookup for ${normalizedName}`)
+        // Direct owner lookup via ENS registry
+        console.log(`🔄 Looking up owner via ENS registry for ${normalizedName}`)
         
         // ENS Registry contract address
         const ensRegistryAddress = '0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e'
@@ -157,30 +140,10 @@ class AlchemyENSService {
         console.log(`❌ Owner lookup failed:`, ownerError)
       }
       
-      // If owner lookup fails, fall back to standard resolution
-      console.log(`🔄 Falling back to standard ENS resolution for ${normalizedName}`)
-      const address = await this.alchemy.core.resolveName(normalizedName)
-      
-      if (address && this.isEthereumAddress(address)) {
-        console.log(`✅ Found standard resolution for ${normalizedName}: ${address}`)
-        return {
-          address: address
-        }
-      }
-
-      // Validate the resolved address
-      if (!this.isEthereumAddress(address)) {
-        console.error(`❌ Invalid address returned: ${address}`)
-        return {
-          address: null,
-          error: 'Invalid address returned from ENS resolution'
-        }
-      }
-
-      console.log(`✅ Alchemy ENS ${normalizedName} resolved to: ${address}`)
-      
+      // If we reach here, owner lookup failed
       return {
-        address: address
+        address: null,
+        error: 'ENS name not found or invalid'
       }
     } catch (error: any) {
       console.error('❌ Alchemy ENS resolution error:', error)

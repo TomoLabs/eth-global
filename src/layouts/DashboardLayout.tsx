@@ -3,20 +3,37 @@ import { useAccount } from 'wagmi'
 import { useAppKit } from '@reown/appkit/react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Wallet, Home } from 'lucide-react'
+import { Wallet } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import ParticleBackground from '@/components/ParticleBackground'
+import ProfileDropdown from '@/components/ProfileDropdown'
+
+interface Group {
+  id: string
+  name: string
+  hash: string
+  members: string[]
+  createdAt: Date
+  isSettled?: boolean
+  totalAmount?: number
+  yourShare?: number
+  isPaid?: boolean
+}
 
 interface DashboardLayoutProps {
   children: ReactNode
   title?: string
   description?: string
+  groups?: Group[]
+  splits?: any[]
 }
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ 
   children, 
   title = "Dashboard",
-  description = "Manage your account and settings"
+  description = "Manage your account and settings",
+  groups = [],
+  splits = []
 }) => {
   const { address, chain } = useAccount()
   const { open } = useAppKit()
@@ -32,24 +49,15 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           <div className="flex items-center justify-between">
             {/* Left - Title */}
             <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/')}
-                className="flex items-center space-x-2"
-              >
-                <Home className="h-4 w-4" />
-                <span>Home</span>
-              </Button>
-              <div className="border-l border-border/20 pl-4">
+              <div>
                 <h1 className="text-xl font-bold gradient-text">{title}</h1>
                 <p className="text-sm text-muted-foreground">{description}</p>
               </div>
             </div>
             
-            {/* Right - Wallet Info */}
+            {/* Right - Profile & Wallet Info */}
             <div className="flex items-center space-x-4">
-              <div className="text-right">
+              <div className="text-right hidden sm:block">
                 <p className="text-sm text-muted-foreground">Connected to</p>
                 <Badge variant="outline" className="font-mono">
                   {chain?.name || 'Unknown Network'}
@@ -65,6 +73,13 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                   {address ? `${address.slice(0, 6)}...${address.slice(-4)}` : 'No Address'}
                 </span>
               </Button>
+              
+              {/* Profile Dropdown */}
+              <ProfileDropdown 
+                groups={groups} 
+                splits={splits}
+                onHomeClick={() => navigate('/')}
+              />
             </div>
           </div>
         </div>

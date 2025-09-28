@@ -1,6 +1,5 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
-import "./test-env.js"; // Temporary environment test
 
 createRoot(document.getElementById("root")!).render(<App />);

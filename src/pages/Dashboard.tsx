@@ -1,10 +1,14 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import DashboardLayout from '@/layouts/DashboardLayout'
 import FriendsSection from '@/components/FriendsSection'
 import SplitModal from '@/components/SplitModal'
+import StorageStatus from '@/components/StorageStatus'
+import { useStorage } from '@/hooks/useStorage'
+import { type SplitData } from '@/services/splitStorageService'
 
 interface Friend {
   id: string
+  name: string
   walletId: string
   resolvedAddress?: string // For ENS names, store the resolved address
   resolvedENS?: string // For addresses, store the resolved ENS name
@@ -18,25 +22,43 @@ interface Group {
   hash: string
   members: string[]
   createdAt: Date
+  isSettled?: boolean
+  totalAmount?: number
+  yourShare?: number
+  isPaid?: boolean
 }
 
 const Dashboard: React.FC = () => {
+  // Storage hook
+  const {
+    isUploading,
+    isLoading,
+    saveData,
+    loadData,
+    lastUploadHash,
+    isConfigured,
+    error,
+    clearError
+  } = useStorage()
 
   // Dummy data for friends and groups (more data to test scrolling)
   const [friends, setFriends] = useState<Friend[]>([
     {
       id: '1',
+      name: 'Alice Cooper',
       walletId: '0x742d35Cc6635C8532FD6bD8c',
       isSelected: false
     },
     {
       id: '2',
+      name: 'Vitalik Buterin',
       walletId: 'vitalik.eth',
       isENS: true,
       isSelected: false
     },
     {
       id: '3',
+      name: 'Bob Smith',
       walletId: '0x1234567890123456789012345',
       isSelected: false
     }
@@ -48,19 +70,39 @@ const Dashboard: React.FC = () => {
       name: 'Dinner Squad',
       hash: '0xabcd1234...',
       members: ['Alice Cooper', 'Bob Smith'],
-      createdAt: new Date('2024-01-15')
+      createdAt: new Date('2024-01-15'),
+      isSettled: true,
+      totalAmount: 120.50,
+      yourShare: 60.25,
+      isPaid: true
     },
     {
       id: '2',
       name: 'Weekend Trip',
       hash: '0xefgh5678...',
       members: ['Alice Cooper', 'Charlie Brown'],
-      createdAt: new Date('2024-01-20')
+      createdAt: new Date('2024-01-20'),
+      isSettled: false,
+      totalAmount: 450.00,
+      yourShare: 150.00,
+      isPaid: false
+    },
+    {
+      id: '3',
+      name: 'Movie Night',
+      hash: '0xijkl9012...',
+      members: ['Bob Smith', 'Diana Prince', 'Ethan Hunt'],
+      createdAt: new Date('2024-01-25'),
+      isSettled: false,
+      totalAmount: 85.75,
+      yourShare: 21.44,
+      isPaid: true
     }
   ])
 
   const [selectedGroupForSplit, setSelectedGroupForSplit] = useState<Group | null>(null)
   const [isSplitModalOpen, setIsSplitModalOpen] = useState(false)
+  const [splits, setSplits] = useState<SplitData[]>([])
 
   const mockMetrics = {
     totalEarnings: "1,234.56",
@@ -90,20 +132,74 @@ const Dashboard: React.FC = () => {
     setIsSplitModalOpen(true)
   }
 
-  const handleSplitCreated = (splitData: any) => {
+  const handleSplitCreated = (splitData: SplitData) => {
     console.log('Split created:', splitData)
-    // Here you would typically send this to your backend
+    
+    // Add split to local state
+    setSplits(prevSplits => [...prevSplits, splitData])
+    
+    // Auto-save after creating a split
+    handleSaveData()
   }
+
+  // Load data on component mount
+  useEffect(() => {
+    handleLoadData()
+  }, [])
+
+  // Storage handlers
+  const handleSaveData = async () => {
+    const success = await saveData(friends, groups)
+    if (success) {
+      console.log('✅ Data saved to Filecoin storage!')
+    }
+  }
+
+  const handleLoadData = async () => {
+    const data = await loadData()
+    if (data) {
+      setFriends(data.friends)
+      setGroups(data.groups)
+      console.log('✅ Data loaded from Filecoin storage!')
+    }
+  }
+
+  // Auto-save when friends or groups change (debounced)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (friends.length > 0 || groups.length > 0) {
+        handleSaveData()
+      }
+    }, 2000) // Auto-save 2 seconds after changes
+
+    return () => clearTimeout(timeoutId)
+  }, [friends, groups, handleSaveData])
 
   return (
     <DashboardLayout 
       title="Bill Splitting Dashboard"
       description="Split bills with friends and manage group expenses"
+      groups={groups}
+      splits={splits}
     >
       {/* Main Content with Left-Aligned Friends/Groups */}
       <div className="relative h-[calc(100vh-96px)] flex flex-col lg:flex-row">
         {/* Fixed Left Panel - Friends Only */}
         <div className="fixed left-0 top-24 w-80 h-[calc(100vh-96px)] p-4 bg-background/95 backdrop-blur-sm border-r border-border/20 overflow-hidden hidden lg:flex lg:flex-col">
+          {/* Storage Status */}
+          <div className="mb-4 p-3 rounded-lg border border-border/20 bg-card/50">
+            <StorageStatus
+              isConfigured={isConfigured}
+              isUploading={isUploading}
+              isLoading={isLoading}
+              lastUploadHash={lastUploadHash}
+              error={error}
+              onSave={handleSaveData}
+              onLoad={handleLoadData}
+              onClearError={clearError}
+            />
+          </div>
+          
           {/* Friends Section - Full Height */}
           <div className="flex-1 min-h-0">
             <FriendsSection
@@ -116,7 +212,21 @@ const Dashboard: React.FC = () => {
 
         {/* Mobile Friends Panel - Collapsible */}
         <div className="lg:hidden">
-          <div className="p-4 border-b border-border/20">
+          <div className="p-4 border-b border-border/20 space-y-4">
+            {/* Mobile Storage Status */}
+            <div className="p-3 rounded-lg border border-border/20 bg-card/50">
+              <StorageStatus
+                isConfigured={isConfigured}
+                isUploading={isUploading}
+                isLoading={isLoading}
+                lastUploadHash={lastUploadHash}
+                error={error}
+                onSave={handleSaveData}
+                onLoad={handleLoadData}
+                onClearError={clearError}
+              />
+            </div>
+            
             <details className="group">
               <summary className="flex items-center justify-between cursor-pointer list-none">
                 <span className="font-medium">Friends & Groups</span>
