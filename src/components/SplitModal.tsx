@@ -7,8 +7,8 @@ import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
 import { DollarSign, Users, Calculator, Loader2, Upload, CheckCircle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { useAccount } from 'wagmi'
-import { splitStorageService, type SplitData, type SplitMember } from '@/services/splitStorageService'
+// import { useAccount } from 'wagmi'
+// import { splitStorageService, type SplitData, type SplitMember } from '@/services/splitStorageService'
 
 interface Group {
   id: string
@@ -22,7 +22,7 @@ interface SplitModalProps {
   isOpen: boolean
   onClose: () => void
   group: Group | null
-  onCreateSplit: (splitData: SplitData) => void
+  onCreateSplit: (splitData: any) => void
 }
 
 interface MemberAmount {
@@ -36,14 +36,14 @@ const SplitModal: React.FC<SplitModalProps> = ({
   group, 
   onCreateSplit 
 }) => {
-  const { address } = useAccount()
+  // const { address } = useAccount()
   const [groupName, setGroupName] = useState('')
   const [totalAmount, setTotalAmount] = useState('')
   const [memberAmounts, setMemberAmounts] = useState<MemberAmount[]>([])
   const [isEqualSplit, setIsEqualSplit] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
-  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle')
-  const [ipfsHash, setIpfsHash] = useState<string>('')
+  // const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle')
+  // const [ipfsHash, setIpfsHash] = useState<string>('')
 
   useEffect(() => {
     if (group) {
@@ -81,103 +81,30 @@ const SplitModal: React.FC<SplitModalProps> = ({
   const isValid = groupName && totalAmount && totalAssigned > 0
 
   const handleCreateSplit = async () => {
-    if (!isValid || !group || !address) return
+    if (!isValid || !group) return
 
     setIsLoading(true)
-    setUploadStatus('uploading')
 
-    try {
-      // Create split members data
-      const splitMembers: SplitMember[] = memberAmounts.map((member, index) => ({
-        id: `member-${index}`,
-        name: member.name,
-        walletId: group.members[index] || member.name, // Use actual wallet ID if available
-        amount: member.amount,
-        isPaid: false // Initially no one has paid
-      }))
-
-      // Create comprehensive split data
-      const splitData: SplitData = {
-        id: `split-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        groupId: group.id,
-        groupName,
-        description: `Bill split for ${groupName}`,
-        totalAmount: parseFloat(totalAmount),
-        paidBy: address, // Current user is the one creating/paying
-        paidByName: 'You', // Could be enhanced with actual user name
-        members: splitMembers,
-        createdAt: new Date().toISOString(),
-        createdBy: address,
-        splitType: isEqualSplit ? 'equal' : 'custom',
-        currency: 'USD',
-        isSettled: false
-      }
-
-      console.log('🔄 Creating split and uploading to Filecoin...', {
-        splitId: splitData.id,
-        totalAmount: splitData.totalAmount,
-        membersCount: splitData.members.length
-      })
-
-      // Upload to Filecoin
-      const uploadResult = await splitStorageService.uploadSplitData(splitData)
-
-      if (uploadResult.success && uploadResult.hash) {
-        setUploadStatus('success')
-        setIpfsHash(uploadResult.hash)
-        
-        // Store hash locally
-        splitStorageService.storeSplitHash(address, splitData.id, uploadResult.hash)
-        
-        console.log('✅ Split uploaded to Filecoin successfully!', {
-          hash: uploadResult.hash,
-          splitId: splitData.id
-        })
-
-        // Wait a moment to show success, then callback
-        setTimeout(() => {
-          onCreateSplit(splitData)
-          setIsLoading(false)
-          handleClose()
-        }, 2000)
-        
-      } else {
-        throw new Error(uploadResult.error || 'Upload failed')
-      }
-
-    } catch (error: any) {
-      console.error('❌ Error creating split:', error)
-      setUploadStatus('error')
-      
-      // Still create the split locally even if upload fails
-      setTimeout(() => {
-        const fallbackSplitData: SplitData = {
-          id: `split-${Date.now()}`,
-          groupId: group.id,
-          groupName,
-          description: `Bill split for ${groupName}`,
-          totalAmount: parseFloat(totalAmount),
-          paidBy: address,
-          paidByName: 'You',
-          members: memberAmounts.map((member, index) => ({
-            id: `member-${index}`,
-            name: member.name,
-            walletId: group.members[index] || member.name,
-            amount: member.amount,
-            isPaid: false
-          })),
-          createdAt: new Date().toISOString(),
-          createdBy: address,
-          splitType: isEqualSplit ? 'equal' : 'custom',
-          currency: 'USD',
-          isSettled: false
-        }
-        
-        onCreateSplit(fallbackSplitData)
-        setIsLoading(false)
-        handleClose()
-      }, 2000)
+    // Simulate API call with loading - SIMPLIFIED VERSION
+    const splitData = {
+      id: `split-${Date.now()}`,
+      groupId: group.id,
+      groupName,
+      totalAmount: parseFloat(totalAmount),
+      memberAmounts,
+      hash: group.hash,
+      createdAt: new Date(),
+      splitType: isEqualSplit ? 'equal' : 'custom'
     }
+
+    console.log('🔄 Creating split locally...', splitData)
+
+    // Simulate processing time
+    setTimeout(() => {
+      onCreateSplit(splitData)
+      setIsLoading(false)
+      handleClose()
+    }, 2000)
   }
 
   const handleClose = () => {
@@ -203,50 +130,11 @@ const SplitModal: React.FC<SplitModalProps> = ({
 
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-12">
-            {uploadStatus === 'uploading' && (
-              <>
-                <Upload className="h-12 w-12 animate-pulse text-blue-500 mb-4" />
-                <h3 className="text-lg font-medium mb-2">Uploading to Filecoin</h3>
-                <p className="text-muted-foreground text-center">
-                  Storing your split data permanently on IPFS...
-                </p>
-              </>
-            )}
-            
-            {uploadStatus === 'success' && (
-              <>
-                <CheckCircle className="h-12 w-12 text-green-500 mb-4" />
-                <h3 className="text-lg font-medium mb-2">Split Created Successfully!</h3>
-                <p className="text-muted-foreground text-center mb-2">
-                  Your split has been stored on Filecoin
-                </p>
-                {ipfsHash && (
-                  <div className="text-xs font-mono bg-muted px-2 py-1 rounded">
-                    IPFS: {ipfsHash.substring(0, 12)}...{ipfsHash.substring(-8)}
-                  </div>
-                )}
-              </>
-            )}
-            
-            {uploadStatus === 'error' && (
-              <>
-                <Loader2 className="h-12 w-12 animate-spin text-orange-500 mb-4" />
-                <h3 className="text-lg font-medium mb-2">Creating Split Locally</h3>
-                <p className="text-muted-foreground text-center">
-                  Upload failed, but split will be saved locally...
-                </p>
-              </>
-            )}
-            
-            {uploadStatus === 'idle' && (
-              <>
-                <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-                <h3 className="text-lg font-medium mb-2">Preparing Split</h3>
-                <p className="text-muted-foreground text-center">
-                  Setting up your bill split...
-                </p>
-              </>
-            )}
+            <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+            <h3 className="text-lg font-medium mb-2">Split is being created</h3>
+            <p className="text-muted-foreground text-center">
+              Processing your bill split and notifying group members...
+            </p>
           </div>
         ) : (
           <div className="space-y-6">

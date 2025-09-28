@@ -25,15 +25,15 @@ interface DashboardLayoutProps {
   title?: string
   description?: string
   groups?: Group[]
-  splits?: any[]
+  // splits?: any[]
 }
 
 const DashboardLayout: React.FC<DashboardLayoutProps> = ({ 
   children, 
   title = "Dashboard",
   description = "Manage your account and settings",
-  groups = [],
-  splits = []
+  groups = []
+  // splits = []
 }) => {
   const { address, chain } = useAccount()
   const { open } = useAppKit()
@@ -77,7 +77,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               {/* Profile Dropdown */}
               <ProfileDropdown 
                 groups={groups} 
-                splits={splits}
+                // splits={splits}
                 onHomeClick={() => navigate('/')}
               />
             </div>

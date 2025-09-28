@@ -1,8 +1,8 @@
 # TOMO-LABS 🚀
 
-**Making AMM Pools Socially Composable**
+**TOMO-LABS**
 
-A revolutionary Web3 application that extends Uniswap v4 pools into the creator economy with native bill splitting, ENS integration, and decentralized storage on Filecoin.
+Smart on-chain payment splits via ENS, groups & cross-chain yield like a lottery.
 
 ![TOMO-LABS Hero](./src/assets/hero-background.jpg)
 

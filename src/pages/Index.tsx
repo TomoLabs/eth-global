@@ -70,19 +70,16 @@ const Index = () => {
         <div className="relative z-10 text-center px-6 max-w-6xl mx-auto">
           <div className="mb-8 overflow-hidden">
             <MarqueeText className="text-6xl md:text-8xl font-bold gradient-text glow-text">
-              UNISWAP V4 HOOKS • CREATOR ECONOMY • PAYMENT RAILS • 
+              ENS • CREATOR ECONOMY • PAYMENT RAILS • 
             </MarqueeText>
           </div>
           
           <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-            Making AMM Pools 
-            <span className="gradient-accent-text glow-text"> Socially Composable</span>
+            TOMO -LABS
           </h1>
           
           <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-4xl mx-auto leading-relaxed">
-            Revolutionary Uniswap v4 hooks that extend pools into the creator economy. 
-            Unlock new AMM primitives with native creator support, payment splitting, 
-            and real-time fee streaming.
+          Smart on-chain payment splits via ENS, groups & cross-chain yield like a lottery.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">

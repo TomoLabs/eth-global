@@ -103,8 +103,10 @@ const FriendsSection: React.FC<FriendsSectionProps> = ({
         
         if (result.error) {
           setEnsError(result.error)
+          setResolvedAddress(null)
         } else if (result.address) {
           setResolvedAddress(result.address)
+          setEnsError(null) // Clear any previous errors
           console.log(`✅ ENS ${walletId} resolved to: ${result.address}`)
         }
       } catch (error) {
@@ -136,6 +138,7 @@ const FriendsSection: React.FC<FriendsSectionProps> = ({
             return
           }
           finalResolvedAddress = result.address
+          setEnsError(null) // Clear any previous errors when resolution succeeds
         } catch (error) {
           setEnsError('Failed to resolve ENS name')
           setIsResolvingENS(false)

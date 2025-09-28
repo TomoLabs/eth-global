@@ -2,18 +2,21 @@ import React, { createContext, useContext, ReactNode } from 'react'
 import { createAppKit } from '@reown/appkit/react'
 import { WagmiProvider } from 'wagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { mainnet } from '@reown/appkit/networks'
-import { wagmiAdapter, projectId, networks } from '@/lib/wagmi'
+import { mainnet, arbitrum, type AppKitNetwork } from '@reown/appkit/networks'
+import { wagmiAdapter, projectId } from '@/lib/wagmi'
 
 // Set up React Query
 const queryClient = new QueryClient()
+
+// Define networks with proper typing
+const appKitNetworks: [AppKitNetwork, ...AppKitNetwork[]] = [mainnet, arbitrum]
 
 // Create the modal with error handling
 try {
   createAppKit({
     adapters: [wagmiAdapter],
     projectId,
-    networks,
+    networks: appKitNetworks,
     defaultNetwork: mainnet,
     metadata: {
       name: 'Creator Economy Hooks',
@@ -32,9 +35,7 @@ try {
       '--w3m-color-mix': '#ffff00',
       '--w3m-color-mix-strength': 25,
       '--w3m-font-family': 'Inter, sans-serif',
-      '--w3m-border-radius-master': '12px',
-      '--w3m-accent-color': '#ffff00',
-      '--w3m-background-color': '#1a1a0a'
+      '--w3m-border-radius-master': '12px'
     }
   })
 } catch (error) {

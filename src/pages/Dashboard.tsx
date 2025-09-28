@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react'
 import DashboardLayout from '@/layouts/DashboardLayout'
 import FriendsSection from '@/components/FriendsSection'
 import SplitModal from '@/components/SplitModal'
-import StorageStatus from '@/components/StorageStatus'
-import { useStorage } from '@/hooks/useStorage'
-import { type SplitData } from '@/services/splitStorageService'
+// import StorageStatus from '@/components/StorageStatus'
+// import { useStorage } from '@/hooks/useStorage'
+// import { type SplitData } from '@/services/splitStorageService'
 
 interface Friend {
   id: string
@@ -29,17 +29,17 @@ interface Group {
 }
 
 const Dashboard: React.FC = () => {
-  // Storage hook
-  const {
-    isUploading,
-    isLoading,
-    saveData,
-    loadData,
-    lastUploadHash,
-    isConfigured,
-    error,
-    clearError
-  } = useStorage()
+  // Storage hook - COMMENTED OUT FOR NOW
+  // const {
+  //   isUploading,
+  //   isLoading,
+  //   saveData,
+  //   loadData,
+  //   lastUploadHash,
+  //   isConfigured,
+  //   error,
+  //   clearError
+  // } = useStorage()
 
   // Dummy data for friends and groups (more data to test scrolling)
   const [friends, setFriends] = useState<Friend[]>([
@@ -102,7 +102,7 @@ const Dashboard: React.FC = () => {
 
   const [selectedGroupForSplit, setSelectedGroupForSplit] = useState<Group | null>(null)
   const [isSplitModalOpen, setIsSplitModalOpen] = useState(false)
-  const [splits, setSplits] = useState<SplitData[]>([])
+  // const [splits, setSplits] = useState<SplitData[]>([])
 
   const mockMetrics = {
     totalEarnings: "1,234.56",
@@ -132,62 +132,62 @@ const Dashboard: React.FC = () => {
     setIsSplitModalOpen(true)
   }
 
-  const handleSplitCreated = (splitData: SplitData) => {
+  const handleSplitCreated = (splitData: any) => {
     console.log('Split created:', splitData)
     
-    // Add split to local state
-    setSplits(prevSplits => [...prevSplits, splitData])
+    // Add split to local state - COMMENTED OUT FOR NOW
+    // setSplits(prevSplits => [...prevSplits, splitData])
     
-    // Auto-save after creating a split
-    handleSaveData()
+    // Auto-save after creating a split - COMMENTED OUT FOR NOW
+    // handleSaveData()
   }
 
-  // Load data on component mount
-  useEffect(() => {
-    handleLoadData()
-  }, [])
+  // Load data on component mount - COMMENTED OUT FOR NOW
+  // useEffect(() => {
+  //   handleLoadData()
+  // }, [])
 
-  // Storage handlers
-  const handleSaveData = async () => {
-    const success = await saveData(friends, groups)
-    if (success) {
-      console.log('✅ Data saved to Filecoin storage!')
-    }
-  }
+  // Storage handlers - COMMENTED OUT FOR NOW
+  // const handleSaveData = async () => {
+  //   const success = await saveData(friends, groups)
+  //   if (success) {
+  //     console.log('✅ Data saved to Filecoin storage!')
+  //   }
+  // }
 
-  const handleLoadData = async () => {
-    const data = await loadData()
-    if (data) {
-      setFriends(data.friends)
-      setGroups(data.groups)
-      console.log('✅ Data loaded from Filecoin storage!')
-    }
-  }
+  // const handleLoadData = async () => {
+  //   const data = await loadData()
+  //   if (data) {
+  //     setFriends(data.friends)
+  //     setGroups(data.groups)
+  //     console.log('✅ Data loaded from Filecoin storage!')
+  //   }
+  // }
 
-  // Auto-save when friends or groups change (debounced)
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (friends.length > 0 || groups.length > 0) {
-        handleSaveData()
-      }
-    }, 2000) // Auto-save 2 seconds after changes
+  // Auto-save when friends or groups change (debounced) - COMMENTED OUT FOR NOW
+  // useEffect(() => {
+  //   const timeoutId = setTimeout(() => {
+  //     if (friends.length > 0 || groups.length > 0) {
+  //       handleSaveData()
+  //     }
+  //   }, 2000) // Auto-save 2 seconds after changes
 
-    return () => clearTimeout(timeoutId)
-  }, [friends, groups, handleSaveData])
+  //   return () => clearTimeout(timeoutId)
+  // }, [friends, groups, handleSaveData])
 
   return (
     <DashboardLayout 
       title="Bill Splitting Dashboard"
       description="Split bills with friends and manage group expenses"
       groups={groups}
-      splits={splits}
+      // splits={splits}
     >
       {/* Main Content with Left-Aligned Friends/Groups */}
       <div className="relative h-[calc(100vh-96px)] flex flex-col lg:flex-row">
         {/* Fixed Left Panel - Friends Only */}
         <div className="fixed left-0 top-24 w-80 h-[calc(100vh-96px)] p-4 bg-background/95 backdrop-blur-sm border-r border-border/20 overflow-hidden hidden lg:flex lg:flex-col">
-          {/* Storage Status */}
-          <div className="mb-4 p-3 rounded-lg border border-border/20 bg-card/50">
+          {/* Storage Status - COMMENTED OUT FOR NOW */}
+          {/* <div className="mb-4 p-3 rounded-lg border border-border/20 bg-card/50">
             <StorageStatus
               isConfigured={isConfigured}
               isUploading={isUploading}
@@ -198,7 +198,7 @@ const Dashboard: React.FC = () => {
               onLoad={handleLoadData}
               onClearError={clearError}
             />
-          </div>
+          </div> */}
           
           {/* Friends Section - Full Height */}
           <div className="flex-1 min-h-0">
@@ -213,8 +213,8 @@ const Dashboard: React.FC = () => {
         {/* Mobile Friends Panel - Collapsible */}
         <div className="lg:hidden">
           <div className="p-4 border-b border-border/20 space-y-4">
-            {/* Mobile Storage Status */}
-            <div className="p-3 rounded-lg border border-border/20 bg-card/50">
+            {/* Mobile Storage Status - COMMENTED OUT FOR NOW */}
+            {/* <div className="p-3 rounded-lg border border-border/20 bg-card/50">
               <StorageStatus
                 isConfigured={isConfigured}
                 isUploading={isUploading}
@@ -225,7 +225,7 @@ const Dashboard: React.FC = () => {
                 onLoad={handleLoadData}
                 onClearError={clearError}
               />
-            </div>
+            </div> */}
             
             <details className="group">
               <summary className="flex items-center justify-between cursor-pointer list-none">

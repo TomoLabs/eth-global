@@ -11,8 +11,8 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { User, Home, CreditCard, Users, CheckCircle, Clock, DollarSign, AlertCircle } from 'lucide-react'
-import { useAccount } from 'wagmi'
-import { splitStorageService, type UserDues } from '@/services/splitStorageService'
+// import { useAccount } from 'wagmi'
+// import { splitStorageService, type UserDues } from '@/services/splitStorageService'
 
 interface Group {
   id: string
@@ -29,41 +29,47 @@ interface Group {
 interface ProfileDropdownProps {
   groups: Group[]
   onHomeClick: () => void
-  splits?: any[] // Array of split data
+  // splits?: any[] // Array of split data
 }
 
-const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ groups, onHomeClick, splits = [] }) => {
-  const { address } = useAccount()
-  const [userDues, setUserDues] = useState<UserDues>({
-    totalOwed: 0,
-    totalOwedToUser: 0,
-    netBalance: 0,
-    pendingGroups: []
-  })
-  const [isLoading, setIsLoading] = useState(false)
+const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ groups, onHomeClick }) => {
+  // const { address } = useAccount()
+  // const [userDues, setUserDues] = useState<UserDues>({
+  //   totalOwed: 0,
+  //   totalOwedToUser: 0,
+  //   netBalance: 0,
+  //   pendingGroups: []
+  // })
+  // const [isLoading, setIsLoading] = useState(false)
 
-  // Calculate dues from actual split data
-  useEffect(() => {
-    if (address && splits.length > 0) {
-      setIsLoading(true)
-      try {
-        const dues = splitStorageService.calculateUserDues(splits, address)
-        setUserDues(dues)
-      } catch (error) {
-        console.error('Error calculating dues:', error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-  }, [address, splits])
+  // Calculate dues from actual split data - COMMENTED OUT FOR NOW
+  // useEffect(() => {
+  //   if (address && splits.length > 0) {
+  //     setIsLoading(true)
+  //     try {
+  //       const dues = splitStorageService.calculateUserDues(splits, address)
+  //       setUserDues(dues)
+  //     } catch (error) {
+  //       console.error('Error calculating dues:', error)
+  //     } finally {
+  //       setIsLoading(false)
+  //     }
+  //   }
+  // }, [address, splits])
 
   // Calculate group statistics
   const settledGroups = groups.filter(group => group.isSettled)
   const unsettledGroups = groups.filter(group => !group.isSettled)
   
-  // Use calculated dues or fallback to mock data
-  const pendingDues = userDues.totalOwed
-  const totalOwed = userDues.totalOwedToUser
+  // Use mock data for now
+  const pendingDues = unsettledGroups.reduce((total, group) => {
+    return total + (group.yourShare || 0)
+  }, 0)
+  
+  const totalOwed = unsettledGroups.reduce((total, group) => {
+    // Mock: amount others owe you
+    return total + ((group.totalAmount || 0) - (group.yourShare || 0)) / (group.members.length - 1)
+  }, 0)
 
   return (
     <div className="flex items-center space-x-2">
@@ -171,8 +177,8 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ groups, onHomeClick, 
 
           <DropdownMenuSeparator />
           
-          {/* Detailed Dues Breakdown */}
-          {userDues.pendingGroups.length > 0 && (
+          {/* Detailed Dues Breakdown - COMMENTED OUT FOR NOW */}
+          {/* {userDues.pendingGroups.length > 0 && (
             <>
               <div className="p-2">
                 <h4 className="text-sm font-medium mb-2 flex items-center">
@@ -214,7 +220,7 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ groups, onHomeClick, 
               </div>
               <DropdownMenuSeparator />
             </>
-          )}
+          )} */}
           
           {/* Recent Groups */}
           {groups.length > 0 && (
