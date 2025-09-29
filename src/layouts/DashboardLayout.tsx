@@ -7,6 +7,7 @@ import { Wallet } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import ParticleBackground from '@/components/ParticleBackground'
 import ProfileDropdown from '@/components/ProfileDropdown'
+import { UserDues } from '@/services/databaseService'
 
 interface Group {
   id: string
@@ -25,6 +26,7 @@ interface DashboardLayoutProps {
   title?: string
   description?: string
   groups?: Group[]
+  userDues?: UserDues | null
   // splits?: any[]
 }
 
@@ -32,7 +34,8 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   children, 
   title = "Dashboard",
   description = "Manage your account and settings",
-  groups = []
+  groups = [],
+  userDues = null
   // splits = []
 }) => {
   const { address, chain } = useAccount()
@@ -77,6 +80,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({
               {/* Profile Dropdown */}
               <ProfileDropdown 
                 groups={groups} 
+                userDues={userDues}
                 // splits={splits}
                 onHomeClick={() => navigate('/')}
               />

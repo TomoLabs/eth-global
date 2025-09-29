@@ -1,7 +1,11 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import DashboardLayout from '@/layouts/DashboardLayout'
 import FriendsSection from '@/components/FriendsSection'
-import SplitModal from '@/components/SplitModal'
+import GroupModal from '@/components/GroupModal'
+import { useDatabase } from '@/hooks/useDatabase'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { AlertCircle, Loader2 } from 'lucide-react'
 // import StorageStatus from '@/components/StorageStatus'
 // import { useStorage } from '@/hooks/useStorage'
 // import { type SplitData } from '@/services/splitStorageService'
@@ -29,80 +33,69 @@ interface Group {
 }
 
 const Dashboard: React.FC = () => {
-  // Storage hook - COMMENTED OUT FOR NOW
-  // const {
-  //   isUploading,
-  //   isLoading,
-  //   saveData,
-  //   loadData,
-  //   lastUploadHash,
-  //   isConfigured,
-  //   error,
-  //   clearError
-  // } = useStorage()
+  const navigate = useNavigate()
+  
+  // Database hook for all data operations
+  const {
+    isLoading,
+    isSaving,
+    friends,
+    groups,
+    userDues,
+    addFriend,
+    removeFriend,
+    createGroup,
+    createSplit,
+    recordPayment,
+    refreshAll,
+    isConnected,
+    error,
+    clearError
+  } = useDatabase()
 
-  // Dummy data for friends and groups (more data to test scrolling)
-  const [friends, setFriends] = useState<Friend[]>([
-    {
-      id: '1',
-      name: 'Alice Cooper',
-      walletId: '0x742d35Cc6635C8532FD6bD8c',
-      isSelected: false
-    },
-    {
-      id: '2',
-      name: 'Vitalik Buterin',
-      walletId: 'vitalik.eth',
-      isENS: true,
-      isSelected: false
-    },
-    {
-      id: '3',
-      name: 'Bob Smith',
-      walletId: '0x1234567890123456789012345',
-      isSelected: false
-    }
-  ])
+  // Local state for friend selections (not stored in database)
+  const [selectedFriendIds, setSelectedFriendIds] = useState<Set<string>>(new Set())
 
-  const [groups, setGroups] = useState<Group[]>([
-    {
-      id: '1',
-      name: 'Dinner Squad',
-      hash: '0xabcd1234...',
-      members: ['Alice Cooper', 'Bob Smith'],
-      createdAt: new Date('2024-01-15'),
-      isSettled: true,
-      totalAmount: 120.50,
-      yourShare: 60.25,
-      isPaid: true
-    },
-    {
-      id: '2',
-      name: 'Weekend Trip',
-      hash: '0xefgh5678...',
-      members: ['Alice Cooper', 'Charlie Brown'],
-      createdAt: new Date('2024-01-20'),
-      isSettled: false,
-      totalAmount: 450.00,
-      yourShare: 150.00,
-      isPaid: false
-    },
-    {
-      id: '3',
-      name: 'Movie Night',
-      hash: '0xijkl9012...',
-      members: ['Bob Smith', 'Diana Prince', 'Ethan Hunt'],
-      createdAt: new Date('2024-01-25'),
-      isSettled: false,
-      totalAmount: 85.75,
-      yourShare: 21.44,
-      isPaid: true
-    }
-  ])
+  // Convert database friends to component format with selection state
+  const componentFriends: Friend[] = friends.map(friend => ({
+    id: friend.id,
+    name: friend.name,
+    walletId: friend.walletId,
+    resolvedAddress: friend.resolvedAddress,
+    resolvedENS: friend.resolvedENS,
+    isENS: friend.isENS,
+    isSelected: selectedFriendIds.has(friend.id)
+  }))
 
-  const [selectedGroupForSplit, setSelectedGroupForSplit] = useState<Group | null>(null)
-  const [isSplitModalOpen, setIsSplitModalOpen] = useState(false)
+  // Convert database groups to component format
+  const componentGroups: Group[] = groups.map(group => ({
+    id: group.id,
+    name: group.name,
+    hash: group.hash,
+    members: group.members,
+    createdAt: group.createdAt,
+    isSettled: group.isSettled,
+    totalAmount: group.totalAmount,
+    yourShare: group.yourShare,
+    isPaid: group.isPaid
+  }))
+
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false)
   // const [splits, setSplits] = useState<SplitData[]>([])
+
+  // Handle friend selection changes
+  const handleFriendsUpdate = (updatedFriends: Friend[]) => {
+    // Extract the selected friend IDs and update local state
+    const newSelectedIds = new Set(
+      updatedFriends.filter(friend => friend.isSelected).map(friend => friend.id)
+    )
+    setSelectedFriendIds(newSelectedIds)
+  }
+
+  // Clear friend selections
+  const clearFriendSelections = () => {
+    setSelectedFriendIds(new Set())
+  }
 
   const mockMetrics = {
     totalEarnings: "1,234.56",
@@ -111,35 +104,30 @@ const Dashboard: React.FC = () => {
     volumeGenerated: "98,765"
   }
 
-  const handleFriendsUpdate = (updatedFriends: Friend[]) => {
-    setFriends(updatedFriends)
-  }
+  // Legacy handlers removed - using database operations now
 
-  const handleGroupCreate = (selectedFriends: Friend[]) => {
-    const groupName = `Group ${groups.length + 1}`
-    const newGroup: Group = {
-      id: Date.now().toString(),
-      name: groupName,
-      hash: `0x${Math.random().toString(16).substr(2, 8)}...`,
-      members: selectedFriends.map(friend => friend.resolvedENS || friend.walletId),
-      createdAt: new Date()
+  // Group creation handler
+  const handleCreateGroup = async (groupName: string, selectedFriends: Friend[]) => {
+    const memberWallets = selectedFriends
+      .map(f => f.resolvedAddress || f.walletId)
+      .filter(Boolean)
+    
+    if (memberWallets.length > 0) {
+      console.log('🔄 Creating group:', { groupName, memberWallets })
+      
+      const success = await createGroup(groupName, memberWallets)
+      if (success) {
+        console.log('✅ Group created successfully')
+        clearFriendSelections()
+      } else {
+        console.error('❌ Failed to create group')
+      }
     }
-    setGroups([...groups, newGroup])
   }
 
-  const handleCreateSplit = (group: Group) => {
-    setSelectedGroupForSplit(group)
-    setIsSplitModalOpen(true)
-  }
-
-  const handleSplitCreated = (splitData: any) => {
-    console.log('Split created:', splitData)
-    
-    // Add split to local state - COMMENTED OUT FOR NOW
-    // setSplits(prevSplits => [...prevSplits, splitData])
-    
-    // Auto-save after creating a split - COMMENTED OUT FOR NOW
-    // handleSaveData()
+  // Handle group click to navigate to expense page
+  const handleGroupClick = (groupId: string) => {
+    navigate(`/group/${groupId}`)
   }
 
   // Load data on component mount - COMMENTED OUT FOR NOW
@@ -175,13 +163,69 @@ const Dashboard: React.FC = () => {
   //   return () => clearTimeout(timeoutId)
   // }, [friends, groups, handleSaveData])
 
+  // Show connection status if not connected
+  if (!isConnected) {
+    return (
+      <DashboardLayout 
+        title="Bill Splitting Dashboard"
+        description="Connect your wallet to start splitting bills"
+        groups={[]}
+      >
+        <div className="flex flex-col items-center justify-center py-12">
+          <AlertCircle className="h-12 w-12 text-muted-foreground mb-4" />
+          <h3 className="text-lg font-medium mb-2">Wallet Not Connected</h3>
+          <p className="text-muted-foreground text-center">
+            Please connect your wallet to access the bill splitting dashboard.
+          </p>
+        </div>
+      </DashboardLayout>
+    )
+  }
+
   return (
     <DashboardLayout 
       title="Bill Splitting Dashboard"
       description="Split bills with friends and manage group expenses"
-      groups={groups}
+      groups={componentGroups}
+      userDues={userDues}
       // splits={splits}
     >
+      {/* Database Connection Status */}
+      {isConnected && !error && !isLoading && friends.length === 0 && groups.length === 0 && (
+        <Alert className="mb-4" variant="default">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            🗄️ Connected to database. Start by adding friends to create groups and splits.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Database Error Alert */}
+      {error && (
+        <Alert className="mb-4" variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Error: {error}
+            <button 
+              onClick={clearError} 
+              className="ml-2 text-sm underline hover:no-underline"
+            >
+              Dismiss
+            </button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Loading Indicator */}
+      {isLoading && (
+        <div className="mb-4 p-3 rounded-lg border border-border/20 bg-card/50">
+          <div className="flex items-center">
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            <span className="text-sm">Loading data from database...</span>
+          </div>
+        </div>
+      )}
+
       {/* Main Content with Left-Aligned Friends/Groups */}
       <div className="relative h-[calc(100vh-96px)] flex flex-col lg:flex-row">
         {/* Fixed Left Panel - Friends Only */}
@@ -203,9 +247,13 @@ const Dashboard: React.FC = () => {
           {/* Friends Section - Full Height */}
           <div className="flex-1 min-h-0">
             <FriendsSection
-              friends={friends}
+              friends={componentFriends}
               onFriendsUpdate={handleFriendsUpdate}
-              onGroupCreate={handleGroupCreate}
+              onGroupCreate={() => {
+                // Open group creation modal instead of directly creating
+                setIsGroupModalOpen(true)
+              }}
+              onAddFriend={addFriend}
             />
           </div>
         </div>
@@ -238,9 +286,13 @@ const Dashboard: React.FC = () => {
               </summary>
               <div className="mt-4 max-h-96 overflow-y-auto">
                 <FriendsSection
-                  friends={friends}
+                  friends={componentFriends}
                   onFriendsUpdate={handleFriendsUpdate}
-                  onGroupCreate={handleGroupCreate}
+                  onGroupCreate={() => {
+                    // Open group creation modal instead of directly creating
+                    setIsGroupModalOpen(true)
+                  }}
+                  onAddFriend={addFriend}
                 />
               </div>
             </details>
@@ -267,10 +319,10 @@ const Dashboard: React.FC = () => {
               </div>
             ) : (
               <div className="flex flex-wrap gap-2">
-                {groups.map((group) => (
+                {componentGroups.map((group) => (
                   <button
                     key={group.id}
-                    onClick={() => handleCreateSplit(group)}
+                    onClick={() => handleGroupClick(group.id)}
                     className="group relative px-3 py-2 sm:px-4 sm:py-3 rounded-lg bg-gradient-to-r from-primary/20 to-accent/20 border border-primary/30 hover:border-primary/50 transition-all duration-200 hover:scale-105 hover:shadow-lg hover:shadow-primary/20"
                   >
                     <div className="flex items-center space-x-2 sm:space-x-3">
@@ -328,12 +380,12 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Split Modal */}
-      <SplitModal
-        isOpen={isSplitModalOpen}
-        onClose={() => setIsSplitModalOpen(false)}
-        group={selectedGroupForSplit}
-        onCreateSplit={handleSplitCreated}
+      {/* Group Creation Modal */}
+      <GroupModal
+        isOpen={isGroupModalOpen}
+        onClose={() => setIsGroupModalOpen(false)}
+        friends={componentFriends.filter(f => f.isSelected)}
+        onCreateGroup={handleCreateGroup}
       />
     </DashboardLayout>
   )

@@ -5,6 +5,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { WalletProvider } from "@/contexts/WalletContext";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
+import GroupExpense from "./pages/GroupExpense";
 import NotFound from "./pages/NotFound";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
@@ -24,6 +25,14 @@ const App = () => {
                 element={
                   <ProtectedRoute>
                     <Dashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/group/:groupId" 
+                element={
+                  <ProtectedRoute>
+                    <GroupExpense />
                   </ProtectedRoute>
                 } 
               />

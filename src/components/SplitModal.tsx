@@ -7,7 +7,7 @@ import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
 import { DollarSign, Users, Calculator, Loader2, Upload, CheckCircle } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-// import { useAccount } from 'wagmi'
+import { useAccount } from 'wagmi'
 // import { splitStorageService, type SplitData, type SplitMember } from '@/services/splitStorageService'
 
 interface Group {
@@ -36,7 +36,7 @@ const SplitModal: React.FC<SplitModalProps> = ({
   group, 
   onCreateSplit 
 }) => {
-  // const { address } = useAccount()
+  const { address } = useAccount()
   const [groupName, setGroupName] = useState('')
   const [totalAmount, setTotalAmount] = useState('')
   const [memberAmounts, setMemberAmounts] = useState<MemberAmount[]>([])
@@ -90,21 +90,39 @@ const SplitModal: React.FC<SplitModalProps> = ({
       id: `split-${Date.now()}`,
       groupId: group.id,
       groupName,
+      title: `Split for ${groupName}`,
+      description: `${isEqualSplit ? 'Equal' : 'Custom'} split of $${totalAmount}`,
       totalAmount: parseFloat(totalAmount),
-      memberAmounts,
-      hash: group.hash,
-      createdAt: new Date(),
-      splitType: isEqualSplit ? 'equal' : 'custom'
+      paidBy: address || '', // User's wallet address
+      paidByName: 'You', // Display name for the payer
+      members: memberAmounts.map((member) => ({
+        id: member.name, // Use the member name as ID
+        name: member.name, // This should be the member's display name
+        walletId: member.name, // This should be the member's wallet address
+        amount: member.amount, // Now this is correctly a number
+        isPaid: false,
+        paidAt: undefined
+      })),
+      createdAt: new Date().toISOString(),
+      createdBy: address || '', // User's wallet address
+      splitType: isEqualSplit ? 'equal' : 'custom',
+      currency: 'USD',
+      isSettled: false,
+      settledAt: undefined
     }
 
-    console.log('🔄 Creating split locally...', splitData)
+    console.log('🔄 Creating split in database...', splitData)
 
-    // Simulate processing time
-    setTimeout(() => {
-      onCreateSplit(splitData)
+    try {
+      await onCreateSplit(splitData)
+      console.log('✅ Split created successfully')
       setIsLoading(false)
       handleClose()
-    }, 2000)
+    } catch (error) {
+      console.error('❌ Error creating split:', error)
+      setIsLoading(false)
+      // Don't close modal on error so user can retry
+    }
   }
 
   const handleClose = () => {

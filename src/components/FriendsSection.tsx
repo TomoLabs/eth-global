@@ -20,6 +20,7 @@ interface FriendsSectionProps {
   friends: Friend[]
   onFriendsUpdate: (friends: Friend[]) => void
   onGroupCreate: (selectedFriends: Friend[]) => void
+  onAddFriend?: (friendData: any) => Promise<boolean>
 }
 
 // Cache for ENS resolutions to avoid repeated API calls
@@ -39,7 +40,8 @@ const clearExpiredCache = () => {
 const FriendsSection: React.FC<FriendsSectionProps> = ({ 
   friends, 
   onFriendsUpdate, 
-  onGroupCreate 
+  onGroupCreate,
+  onAddFriend
 }) => {
   const [isAddFriendOpen, setIsAddFriendOpen] = useState(false)
   const [newFriend, setNewFriend] = useState({ walletId: '' })
@@ -147,16 +149,37 @@ const FriendsSection: React.FC<FriendsSectionProps> = ({
         setIsResolvingENS(false)
       }
       
-      const friend: Friend = {
+      const friendData = {
         id: Date.now().toString(),
+        name: inputValue, // Use ENS name as display name
         walletId: inputValue, // Store the ENS name
         resolvedAddress: finalResolvedAddress, // Store the resolved wallet address
         isENS: true,
         isSelected: false
       }
       
-      onFriendsUpdate([...friends, friend])
-      console.log(`✅ Added ENS friend: ${inputValue} → ${finalResolvedAddress}`)
+      // Use database service if available, otherwise update local state
+      if (onAddFriend) {
+        setIsResolvingENS(true)
+        const success = await onAddFriend(friendData)
+        setIsResolvingENS(false)
+        
+        if (success) {
+          console.log(`✅ Added ENS friend to database: ${inputValue} → ${finalResolvedAddress}`)
+          // Clear form on success
+          setNewFriend({ walletId: '' })
+          setEnsError(null)
+          setResolvedAddress(null)
+          setIsAddFriendOpen(false)
+          return // Exit early to avoid duplicate form clearing
+        } else {
+          setEnsError('Failed to add friend to database')
+          return
+        }
+      } else {
+        onFriendsUpdate([...friends, friendData])
+        console.log(`✅ Added ENS friend locally: ${inputValue} → ${finalResolvedAddress}`)
+      }
       
     } else if (alchemyENSService.isEthereumAddress(inputValue)) {
       // For wallet addresses: store address as walletId, try to find ENS
@@ -165,28 +188,68 @@ const FriendsSection: React.FC<FriendsSectionProps> = ({
       try {
         const ensName = await alchemyENSService.resolveAddressToENS(inputValue)
         
-        const friend: Friend = {
+        const friendData = {
           id: Date.now().toString(),
+          name: ensName || `${inputValue.slice(0, 6)}...${inputValue.slice(-4)}`, // Use ENS or truncated address as name
           walletId: inputValue, // Store the wallet address
+          resolvedAddress: inputValue,
           resolvedENS: ensName || undefined, // Store the resolved ENS name if found
           isENS: false,
           isSelected: false
         }
         
-        onFriendsUpdate([...friends, friend])
-        console.log(`✅ Added address friend: ${inputValue}${ensName ? ` ← ${ensName}` : ''}`)
+        // Use database service if available, otherwise update local state
+        if (onAddFriend) {
+          const success = await onAddFriend(friendData)
+          setIsResolvingENS(false)
+          
+          if (success) {
+            console.log(`✅ Added address friend to database: ${inputValue}${ensName ? ` ← ${ensName}` : ''}`)
+            // Clear form on success
+            setNewFriend({ walletId: '' })
+            setEnsError(null)
+            setResolvedAddress(null)
+            setIsAddFriendOpen(false)
+            return // Exit early to avoid duplicate form clearing
+          } else {
+            setEnsError('Failed to add friend to database')
+            return
+          }
+        } else {
+          onFriendsUpdate([...friends, friendData])
+          console.log(`✅ Added address friend locally: ${inputValue}${ensName ? ` ← ${ensName}` : ''}`)
+        }
         
       } catch (error) {
         // Still add the friend even if reverse ENS fails
-        const friend: Friend = {
+        const friendData = {
           id: Date.now().toString(),
+          name: `${inputValue.slice(0, 6)}...${inputValue.slice(-4)}`, // Truncated address as name
           walletId: inputValue,
+          resolvedAddress: inputValue,
           isENS: false,
           isSelected: false
         }
         
-        onFriendsUpdate([...friends, friend])
-        console.log(`✅ Added address friend: ${inputValue} (no ENS found)`)
+        // Use database service if available, otherwise update local state
+        if (onAddFriend) {
+          const success = await onAddFriend(friendData)
+          if (success) {
+            console.log(`✅ Added address friend to database: ${inputValue} (no ENS found)`)
+            // Clear form on success
+            setNewFriend({ walletId: '' })
+            setEnsError(null)
+            setResolvedAddress(null)
+            setIsAddFriendOpen(false)
+            return // Exit early to avoid duplicate form clearing
+          } else {
+            setEnsError('Failed to add friend to database')
+            return
+          }
+        } else {
+          onFriendsUpdate([...friends, friendData])
+          console.log(`✅ Added address friend locally: ${inputValue} (no ENS found)`)
+        }
       } finally {
         setIsResolvingENS(false)
       }

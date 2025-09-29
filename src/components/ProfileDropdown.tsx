@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { User, Home, CreditCard, Users, CheckCircle, Clock, DollarSign, AlertCircle } from 'lucide-react'
 // import { useAccount } from 'wagmi'
 // import { splitStorageService, type UserDues } from '@/services/splitStorageService'
+import { UserDues } from '@/services/databaseService'
 
 interface Group {
   id: string
@@ -28,11 +29,12 @@ interface Group {
 
 interface ProfileDropdownProps {
   groups: Group[]
+  userDues?: UserDues | null
   onHomeClick: () => void
   // splits?: any[] // Array of split data
 }
 
-const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ groups, onHomeClick }) => {
+const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ groups, userDues, onHomeClick }) => {
   // const { address } = useAccount()
   // const [userDues, setUserDues] = useState<UserDues>({
   //   totalOwed: 0,
@@ -61,15 +63,17 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ groups, onHomeClick }
   const settledGroups = groups.filter(group => group.isSettled)
   const unsettledGroups = groups.filter(group => !group.isSettled)
   
-  // Use mock data for now
-  const pendingDues = unsettledGroups.reduce((total, group) => {
+  // Use database userDues data or fallback to mock calculations
+  const pendingDues = userDues?.totalOwed || unsettledGroups.reduce((total, group) => {
     return total + (group.yourShare || 0)
   }, 0)
   
-  const totalOwed = unsettledGroups.reduce((total, group) => {
+  const totalOwed = userDues?.totalOwedToUser || unsettledGroups.reduce((total, group) => {
     // Mock: amount others owe you
     return total + ((group.totalAmount || 0) - (group.yourShare || 0)) / (group.members.length - 1)
   }, 0)
+  
+  const netBalance = userDues?.netBalance || (totalOwed - pendingDues)
 
   return (
     <div className="flex items-center space-x-2">
@@ -175,18 +179,43 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ groups, onHomeClick }
             </div>
           </div>
 
-          <DropdownMenuSeparator />
-          
-          {/* Detailed Dues Breakdown - COMMENTED OUT FOR NOW */}
-          {/* {userDues.pendingGroups.length > 0 && (
+          {/* Optimal Settlement Transactions */}
+          {userDues?.globalOptimalTransactions && userDues.globalOptimalTransactions.length > 0 && (
             <>
+              <DropdownMenuSeparator />
               <div className="p-2">
                 <h4 className="text-sm font-medium mb-2 flex items-center">
-                  <AlertCircle className="h-4 w-4 mr-2 text-orange-500" />
-                  Pending Dues by Group
+                  <AlertCircle className="h-4 w-4 mr-2 text-blue-500" />
+                  Optimal Settlement
+                </h4>
+                <div className="space-y-2 max-h-32 overflow-y-auto">
+                  {userDues.globalOptimalTransactions.map((transaction, index) => (
+                    <div key={index} className="p-2 rounded-lg bg-muted/30 border">
+                      <div className="text-xs">
+                        <span className={transaction.from === userDues ? 'text-red-600' : 'text-green-600'}>
+                          {transaction.description}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Group-wise Settlement Details */}
+          {userDues?.pendingGroups && userDues.pendingGroups.some(g => g.optimalTransactions?.length > 0) && (
+            <>
+              <DropdownMenuSeparator />
+              <div className="p-2">
+                <h4 className="text-sm font-medium mb-2 flex items-center">
+                  <Users className="h-4 w-4 mr-2 text-purple-500" />
+                  Group Settlement Details
                 </h4>
                 <div className="space-y-2 max-h-40 overflow-y-auto">
-                  {userDues.pendingGroups.map((group) => (
+                  {userDues.pendingGroups
+                    .filter(group => group.optimalTransactions?.length > 0)
+                    .map((group) => (
                     <div key={group.groupId} className="p-2 rounded-lg bg-muted/30 border">
                       <div className="flex items-center justify-between mb-1">
                         <span className="text-sm font-medium truncate max-w-[120px]">
@@ -200,27 +229,21 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ groups, onHomeClick }
                         </Badge>
                       </div>
                       
-                      <div className="space-y-1 text-xs">
-                        {group.amountOwed > 0 && (
-                          <div className="flex justify-between text-red-600">
-                            <span>You owe:</span>
-                            <span>${group.amountOwed.toFixed(2)}</span>
+                      <div className="space-y-1">
+                        {group.optimalTransactions?.map((transaction, idx) => (
+                          <div key={idx} className="text-xs">
+                            <span className={transaction.from === userDues ? 'text-red-600' : 'text-green-600'}>
+                              {transaction.description}
+                            </span>
                           </div>
-                        )}
-                        {group.amountOwedToUser > 0 && (
-                          <div className="flex justify-between text-green-600">
-                            <span>Owed to you:</span>
-                            <span>${group.amountOwedToUser.toFixed(2)}</span>
-                          </div>
-                        )}
+                        ))}
                       </div>
                     </div>
                   ))}
                 </div>
               </div>
-              <DropdownMenuSeparator />
             </>
-          )} */}
+          )}
           
           {/* Recent Groups */}
           {groups.length > 0 && (
