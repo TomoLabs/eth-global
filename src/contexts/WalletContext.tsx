@@ -32,9 +32,9 @@ try {
     },
     themeMode: 'dark',
     themeVariables: {
-      // Use a darker mix color and stronger strength for higher contrast modal
-      '--w3m-color-mix': '#0a0a0a',
-      '--w3m-color-mix-strength': 90,
+      // Yellow/black theme with good contrast
+      '--w3m-color-mix': '#facc15', // yellow-400
+      '--w3m-color-mix-strength': 60,
       '--w3m-font-family': 'Inter, sans-serif',
       '--w3m-border-radius-master': '12px'
     }
