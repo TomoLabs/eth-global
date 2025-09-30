@@ -32,8 +32,9 @@ try {
     },
     themeMode: 'dark',
     themeVariables: {
-      '--w3m-color-mix': '#ffff00',
-      '--w3m-color-mix-strength': 25,
+      // Use a darker mix color and stronger strength for higher contrast modal
+      '--w3m-color-mix': '#0a0a0a',
+      '--w3m-color-mix-strength': 90,
       '--w3m-font-family': 'Inter, sans-serif',
       '--w3m-border-radius-master': '12px'
     }

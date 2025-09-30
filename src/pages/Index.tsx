@@ -1,218 +1,139 @@
-import MarqueeText from "@/components/MarqueeText";
-import ParticleBackground from "@/components/ParticleBackground";
-import HookCard from "@/components/HookCard";
-import GlowButton from "@/components/GlowButton";
-import Navbar from "@/components/Navbar";
+import { useEffect, useRef, useState } from "react";
+import { motion } from "framer-motion";
 import PlaceholderWarning from "@/components/PlaceholderWarning";
-import heroBackground from "@/assets/hero-background.jpg";
-import paymentSplit from "@/assets/payment-split.jpg";
-import streamingFees from "@/assets/streaming-fees.jpg";
-import creatorCodes from "@/assets/creator-codes.jpg";
+import { useAppKit } from "@reown/appkit/react";
+import { useAccount } from "wagmi";
+import { useNavigate } from "react-router-dom";
 
 const Index = () => {
-  const hooks = [
-    {
-      title: "Fee-to-Splitter Hook",
-      description: "Redirects a configurable portion of swap fees to a payment splitter, automatically distributing rewards to multiple stakeholders in real-time.",
-      icon: "💰",
-      image: paymentSplit,
-      features: [
-        "Configurable fee splitting ratios",
-        "Automatic multi-party payments",
-        "Real-time distribution",
-        "DAO treasury integration"
-      ]
-    },
-    {
-      title: "Stream-My-Fees Hook",
-      description: "Accrues fees and streams them in real-time using Superfluid protocol with Gelato automation for continuous payment flows.",
-      icon: "🌊",
-      image: streamingFees,
-      features: [
-        "Real-time fee streaming",
-        "Superfluid protocol integration",
-        "Gelato automation",
-        "Continuous payment flows"
-      ]
-    },
-    {
-      title: "Referral/Creator-Code Hook",
-      description: "Enables swappers to attach creator/referral codes (Farcaster fid), facilitating shared fees, XMTP notifications, and PostHog analytics.",
-      icon: "🎯",
-      image: creatorCodes,
-      features: [
-        "Creator referral tracking",
-        "Farcaster integration",
-        "XMTP notifications",
-        "PostHog analytics"
-      ]
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
+  const [showCTA, setShowCTA] = useState(false);
+  const headline = "On-chain splits • ENS support";
+  const subline = "Track expenses, earn incentives";
+
+  const { open } = useAppKit();
+  const { isConnected } = useAccount();
+  const navigate = useNavigate();
+
+  // no feature list; keep it simple
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const fallbackTimer = window.setTimeout(() => {
+      setIsVideoLoaded(true);
+    }, 1500);
+
+    const tryPlay = async () => {
+      try {
+        await video.play();
+        setIsVideoLoaded(true);
+      } catch (err) {
+        setIsVideoLoaded(true);
+        console.warn('Video autoplay blocked, showing UI without playback:', err);
+      }
+    };
+
+    const handleLoadedData = () => {
+      tryPlay();
+    };
+
+    const handleCanPlay = () => {
+      tryPlay();
+    };
+
+    video.addEventListener('loadeddata', handleLoadedData);
+    video.addEventListener('canplay', handleCanPlay);
+
+    return () => {
+      window.clearTimeout(fallbackTimer);
+      video.removeEventListener('loadeddata', handleLoadedData);
+      video.removeEventListener('canplay', handleCanPlay);
+    };
+  }, []);
+
+  // Reveal CTA after video is ready
+  useEffect(() => {
+    if (!isVideoLoaded) return;
+    const id = window.setTimeout(() => setShowCTA(true), 600);
+    return () => window.clearTimeout(id);
+  }, [isVideoLoaded]);
+
+  useEffect(() => {
+    if (isConnected) {
+      navigate("/dashboard");
     }
-  ];
+  }, [isConnected, navigate]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Navbar />
+    <div className="min-h-screen bg-black text-white overflow-hidden relative">
       <PlaceholderWarning />
-      <ParticleBackground />
       
-      {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-        <div 
-          className="absolute inset-0 opacity-20"
-          style={{
-            backgroundImage: `url(${heroBackground})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
+      <div className="fixed inset-0 z-0">
+        <video
+          ref={videoRef}
+          className="w-full h-full object-cover"
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="metadata"
+          onError={() => {
+            setIsVideoLoaded(true);
           }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-background/60 via-background/80 to-background" />
-        
-        <div className="relative z-10 text-center px-6 max-w-6xl mx-auto">
-          <div className="mb-8 overflow-hidden">
-            <MarqueeText className="text-6xl md:text-8xl font-bold gradient-text glow-text">
-              ENS • CREATOR ECONOMY • PAYMENT RAILS • 
-            </MarqueeText>
-          </div>
+        >
+          <source src="/liquid_flow.mp4" type="video/mp4" />
+        </video>
+
+        <div className="pointer-events-none absolute inset-0 bg-black/25" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/50" />
+      </div>
           
-          <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-            TOMO -LABS
-          </h1>
-          
-          <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-4xl mx-auto leading-relaxed">
-          Smart on-chain payment splits via ENS, groups & cross-chain yield like a lottery.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <GlowButton variant="primary" size="lg">
-              Explore Hooks
-            </GlowButton>
-            <GlowButton variant="secondary" size="lg">
-              Creator Discovery
-            </GlowButton>
-          </div>
-        </div>
-      </section>
-
-      {/* Marquee Section */}
-      <section className="py-12 border-y border-border/20">
-        <MarqueeText reverse className="text-2xl md:text-4xl font-semibold text-muted-foreground">
-          FEE SPLITTING • REAL-TIME STREAMING • CREATOR CODES • SOCIAL COMPOSABILITY • 
-        </MarqueeText>
-      </section>
-
-      {/* Hooks Section */}
-      <section className="py-20 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 gradient-text">
-              Revolutionary Hook Suite
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Three innovative hooks that transform Uniswap pools into creator-friendly, 
-              socially composable primitives for the next generation of DeFi.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {hooks.map((hook, index) => (
-              <HookCard key={index} {...hook} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Creator Discovery Section */}
-      <section className="py-20 px-6 glass">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 gradient-accent-text">
-            Neynar-Powered Creator Discovery
-          </h2>
-          <p className="text-xl text-muted-foreground mb-8">
-            Tinder-like UI for discovering creators, complete with swipe mechanics 
-            and seamless integration with Farcaster profiles.
-          </p>
-          
-          <div className="glass rounded-2xl p-8 glow-primary">
-            <div className="text-6xl mb-4">📱</div>
-            <h3 className="text-2xl font-bold mb-4">Swipe. Connect. Earn.</h3>
-            <p className="text-muted-foreground">
-              Match with creators, set up referral codes, and start earning 
-              from every swap in their ecosystem.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* About Section */}
-      <section id="about-section" className="py-20 px-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 gradient-text">
-              About Us
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              We're building the future of decentralized finance by making AMM pools 
-              socially composable through innovative Uniswap v4 hooks.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div className="glass rounded-2xl p-8 text-center">
-              <div className="text-4xl mb-4">🚀</div>
-              <h3 className="text-xl font-bold mb-4">Innovation</h3>
-              <p className="text-muted-foreground">
-                Pioneering the next generation of DeFi primitives with creator-centric solutions.
-              </p>
+      <div className="relative z-10 min-h-screen flex flex-col">
+        <section className="flex-1 px-6">
+          <div className="max-w-6xl mx-auto h-full">
+            <div className="absolute left-6 bottom-28 md:left-12 md:bottom-24">
+              
+            {/* Clean static text */}
+            <div className="mb-3">
+              <h1 className="text-4xl md:text-7xl font-light text-white tracking-tight">
+                {headline}
+              </h1>
             </div>
-
-            <div className="glass rounded-2xl p-8 text-center">
-              <div className="text-4xl mb-4">🌐</div>
-              <h3 className="text-xl font-bold mb-4">Community</h3>
-              <p className="text-muted-foreground">
-                Building bridges between creators, developers, and the broader DeFi ecosystem.
-              </p>
-            </div>
-
-            <div className="glass rounded-2xl p-8 text-center">
-              <div className="text-4xl mb-4">💡</div>
-              <h3 className="text-xl font-bold mb-4">Vision</h3>
-              <p className="text-muted-foreground">
-                Democratizing access to financial tools for creators and fostering economic growth.
-              </p>
+            <p className="text-lg md:text-2xl text-white/80 mb-8">
+              {subline}
+            </p>
+            {showCTA && (
+              <motion.button
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4 }}
+                onClick={() => open?.()}
+                className="px-6 py-3 md:px-8 md:py-4 rounded-xl bg-yellow-400 text-black font-medium hover:bg-yellow-300 transition-colors"
+              >
+                Try now
+              </motion.button>
+            )}
+              
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
-      {/* CTA Section */}
-      <section className="py-20 px-6">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 gradient-text">
-            Ready to Build the Future?
-          </h2>
-          <p className="text-xl text-muted-foreground mb-8">
-            Join the revolution and make Uniswap pools socially composable with our hook suite.
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <GlowButton variant="accent" size="lg">
-              Start Building
-            </GlowButton>
-            <GlowButton variant="secondary" size="lg">
-              View Documentation
-            </GlowButton>
-          </div>
+      {!isVideoLoaded && (
+        <div className="fixed inset-0 z-20 bg-black flex items-center justify-center">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="text-center"
+          >
+            <div className="w-16 h-16 border-4 border-white/20 border-t-white rounded-full animate-spin mx-auto mb-4" />
+            <p className="text-white/70">Loading experience...</p>
+          </motion.div>
         </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="py-12 px-6 border-t border-border/20">
-        <div className="max-w-4xl mx-auto text-center">
-          <p className="text-muted-foreground">
-            Built for the creator economy • Powered by Uniswap v4 hooks
-          </p>
-        </div>
-      </footer>
+      )}
     </div>
   );
 };
