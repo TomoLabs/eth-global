@@ -192,7 +192,7 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ groups, userDues, onH
                   {userDues.globalOptimalTransactions.map((transaction, index) => (
                     <div key={index} className="p-2 rounded-lg bg-muted/30 border">
                       <div className="text-xs">
-                        <span className={transaction.from === userDues ? 'text-red-600' : 'text-green-600'}>
+                        <span className={transaction.from === userDues.userWallet ? 'text-red-600' : 'text-green-600'}>
                           {transaction.description}
                         </span>
                       </div>
@@ -232,7 +232,7 @@ const ProfileDropdown: React.FC<ProfileDropdownProps> = ({ groups, userDues, onH
                       <div className="space-y-1">
                         {group.optimalTransactions?.map((transaction, idx) => (
                           <div key={idx} className="text-xs">
-                            <span className={transaction.from === userDues ? 'text-red-600' : 'text-green-600'}>
+                            <span className={transaction.from === userDues.userWallet ? 'text-red-600' : 'text-green-600'}>
                               {transaction.description}
                             </span>
                           </div>

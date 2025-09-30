@@ -86,6 +86,7 @@ export interface SplitMemberData {
 }
 
 export interface UserDues {
+  userWallet: string
   totalOwed: number
   totalOwedToUser: number
   netBalance: number
@@ -432,7 +433,14 @@ class DatabaseService {
     try {
       const user = await this.getUserByWallet(userWallet)
       if (!user) {
-        return { totalOwed: 0, totalOwedToUser: 0, netBalance: 0, pendingGroups: [] }
+        return { 
+          userWallet, 
+          totalOwed: 0, 
+          totalOwedToUser: 0, 
+          netBalance: 0, 
+          pendingGroups: [],
+          globalOptimalTransactions: []
+        }
       }
 
       const splitMembers = await this.client.splitMember.findMany({
@@ -542,6 +550,7 @@ class DatabaseService {
       const globalSettlement = calculateGroupSettlement(allSplits)
 
       return {
+        userWallet,
         totalOwed,
         totalOwedToUser,
         netBalance: totalOwedToUser - totalOwed,
@@ -553,6 +562,7 @@ class DatabaseService {
     } catch (error) {
       console.error('❌ Error calculating user dues:', error)
       return { 
+        userWallet,
         totalOwed: 0, 
         totalOwedToUser: 0, 
         netBalance: 0, 
